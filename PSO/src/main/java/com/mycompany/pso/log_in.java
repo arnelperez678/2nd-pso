@@ -43,7 +43,7 @@ Connection conn;
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        getContentPane().add(txt_username, new org.netbeans.lib.awtextra.AbsoluteConstraints(311, 90, 120, -1));
+        getContentPane().add(txt_username, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 30, 120, -1));
 
         btn_login.setText("Log in");
         btn_login.addActionListener(new java.awt.event.ActionListener() {
@@ -51,14 +51,14 @@ Connection conn;
                 btn_loginActionPerformed(evt);
             }
         });
-        getContentPane().add(btn_login, new org.netbeans.lib.awtextra.AbsoluteConstraints(312, 150, 100, -1));
-        getContentPane().add(txt_password, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 120, 120, -1));
+        getContentPane().add(btn_login, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 90, 100, -1));
+        getContentPane().add(txt_password, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 60, 120, -1));
 
         jLabel1.setText("Username:");
-        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 90, -1, -1));
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 30, -1, -1));
 
         jLabel2.setText("Password:");
-        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 120, -1, -1));
+        getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 60, -1, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -71,7 +71,7 @@ String username = txt_username.getText();
         String userpassword = String.valueOf(pass);
         
         try{
-        String sqlquery = "Select * From user_login WHERE user_name = ? and user_password = ? ";
+        String sqlquery = "Select * From Table1 WHERE user_name = ? and user_password = ? ";
         pst = conn.prepareStatement(sqlquery);
         pst.setString(1,username);
         pst.setString(2, userpassword);
