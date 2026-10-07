@@ -3,7 +3,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.mycompany.pso;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.JOptionPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.table.DefaultTableModel;
 /**
  *
  * @author Admin
@@ -15,7 +22,486 @@ public class CRUD extends javax.swing.JFrame {
      */
     public CRUD() {
         initComponents();
+         setupComboBoxes();
+    setupTable();
+    setupEvents();
+    loadStudents();
     }
+    
+    private void setupComboBoxes() {
+
+    // Course
+    jComboBox1.removeAllItems();
+
+    jComboBox1.addItem("ACT");
+    jComboBox1.addItem("BSIT");
+    jComboBox1.addItem("BSCS");
+    jComboBox1.addItem("BSE");
+    jComboBox1.addItem("BSBA");
+    jComboBox1.addItem("BSOA");
+    
+
+    // Year Level
+    jComboBox2.removeAllItems();
+
+    jComboBox2.addItem("1st Year");
+    jComboBox2.addItem("2nd Year");
+    jComboBox2.addItem("3rd Year");
+    jComboBox2.addItem("4th Year");
+}
+    private void setupTable() {
+
+    jTable1.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+    jTable1.setModel(new DefaultTableModel(
+        new Object[][] {},
+        new String[] {
+            "ID",
+            "STUDENT NUMBER",
+            "FIRST NAME",
+            "LAST NAME",
+            "COURSE",
+            "YEAR LEVEL"
+        }
+    ) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    });
+
+    jTable1.getSelectionModel().addListSelectionListener(e -> {
+
+        if (!e.getValueIsAdjusting()) {
+            int row = jTable1.getSelectedRow();
+
+            if (row >= 0) {
+                jTextField1.setText(
+                        jTable1.getValueAt(row, 1).toString()
+                );
+
+                jTextField2.setText(
+                        jTable1.getValueAt(row, 2).toString()
+                );
+
+                jTextField3.setText(
+                        jTable1.getValueAt(row, 3).toString()
+                );
+
+                jComboBox1.setSelectedItem(
+                        jTable1.getValueAt(row, 4).toString()
+                );
+
+                jComboBox2.setSelectedItem(
+                        jTable1.getValueAt(row, 5).toString()
+                );
+            }
+        }
+    });
+}
+    private void setupEvents() {
+
+    jButton1.addActionListener(e -> addStudent());
+
+    jButton2.addActionListener(e -> updateStudent());
+
+    jButton3.addActionListener(e -> deleteStudent());
+
+    jButton4.addActionListener(e -> clearFields());
+
+    jButton5.addActionListener(e -> searchStudents());
+
+    jTextField4.addActionListener(e -> searchStudents());
+}
+    private void loadStudents() {
+
+    DefaultTableModel model =
+            (DefaultTableModel) jTable1.getModel();
+
+    model.setRowCount(0);
+
+    String sql =
+            "SELECT ID, StudentNumber, FirstName, LastName, Course, Year "
+          + "FROM students ORDER BY ID";
+
+    try (
+        Connection conn = DBConnection.getConnection();
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql)
+    ) {
+
+        while (rs.next()) {
+
+            model.addRow(new Object[] {
+                rs.getInt("ID"),
+                rs.getString("StudentNumber"),
+                rs.getString("FirstName"),
+                rs.getString("LastName"),
+                rs.getString("Course"),
+                rs.getString("Year")
+            });
+        }
+
+    } catch (SQLException ex) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Unable to load students.\n\n" + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+}
+    private void addStudent() {
+
+    String studentNumber = jTextField1.getText().trim();
+    String firstName = jTextField2.getText().trim();
+    String lastName = jTextField3.getText().trim();
+
+    String course = jComboBox1.getSelectedItem() == null
+            ? ""
+            : jComboBox1.getSelectedItem().toString();
+
+    String year = jComboBox2.getSelectedItem() == null
+            ? ""
+            : jComboBox2.getSelectedItem().toString();
+
+    if (studentNumber.isEmpty()
+            || firstName.isEmpty()
+            || lastName.isEmpty()) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Please complete all student information.",
+                "Incomplete Information",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        return;
+    }
+
+    String checkSql =
+            "SELECT COUNT(*) FROM students WHERE StudentNumber = ?";
+
+    String insertSql =
+            "INSERT INTO students "
+          + "(StudentNumber, FirstName, LastName, Course, Year) "
+          + "VALUES (?, ?, ?, ?, ?)";
+
+    try (Connection conn = DBConnection.getConnection()) {
+
+        // Check duplicate student number
+        try (PreparedStatement check =
+                conn.prepareStatement(checkSql)) {
+
+            check.setString(1, studentNumber);
+
+            ResultSet rs = check.executeQuery();
+
+            if (rs.next() && rs.getInt(1) > 0) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Student number already exists.",
+                        "Duplicate Student",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+        }
+
+        // Insert student
+        try (PreparedStatement pst =
+                conn.prepareStatement(insertSql)) {
+
+            pst.setString(1, studentNumber);
+            pst.setString(2, firstName);
+            pst.setString(3, lastName);
+            pst.setString(4, course);
+            pst.setString(5, year);
+
+            pst.executeUpdate();
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Student added successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+
+        loadStudents();
+        clearFields();
+
+    } catch (SQLException ex) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Error adding student:\n\n" + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+}
+    private void updateStudent() {
+
+    int row = jTable1.getSelectedRow();
+
+    if (row < 0) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a student from the table first.",
+                "No Student Selected",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        return;
+    }
+
+    int id = Integer.parseInt(
+            jTable1.getValueAt(row, 0).toString()
+    );
+
+    String studentNumber = jTextField1.getText().trim();
+    String firstName = jTextField2.getText().trim();
+    String lastName = jTextField3.getText().trim();
+
+    String course = jComboBox1.getSelectedItem() == null
+            ? ""
+            : jComboBox1.getSelectedItem().toString();
+
+    String year = jComboBox2.getSelectedItem() == null
+            ? ""
+            : jComboBox2.getSelectedItem().toString();
+
+    if (studentNumber.isEmpty()
+            || firstName.isEmpty()
+            || lastName.isEmpty()) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Please complete all student information.",
+                "Incomplete Information",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        return;
+    }
+
+    String sql =
+            "UPDATE students SET "
+          + "StudentNumber = ?, "
+          + "FirstName = ?, "
+          + "LastName = ?, "
+          + "Course = ?, "
+          + "Year = ? "
+          + "WHERE ID = ?";
+
+    try (
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pst = conn.prepareStatement(sql)
+    ) {
+
+        pst.setString(1, studentNumber);
+        pst.setString(2, firstName);
+        pst.setString(3, lastName);
+        pst.setString(4, course);
+        pst.setString(5, year);
+        pst.setInt(6, id);
+
+        int result = pst.executeUpdate();
+
+        if (result > 0) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Student updated successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            loadStudents();
+            clearFields();
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Student was not found.",
+                    "Update Failed",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+
+    } catch (SQLException ex) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Error updating student:\n\n" + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+}
+    private void deleteStudent() {
+
+    int row = jTable1.getSelectedRow();
+
+    if (row < 0) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a student from the table first.",
+                "No Student Selected",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        return;
+    }
+
+    int id = Integer.parseInt(
+            jTable1.getValueAt(row, 0).toString()
+    );
+
+    String studentName =
+            jTable1.getValueAt(row, 2).toString()
+            + " "
+            + jTable1.getValueAt(row, 3).toString();
+
+    int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete " + studentName + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+    );
+
+    if (confirm != JOptionPane.YES_OPTION) {
+        return;
+    }
+
+    String sql =
+            "DELETE FROM students WHERE ID = ?";
+
+    try (
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pst = conn.prepareStatement(sql)
+    ) {
+
+        pst.setInt(1, id);
+
+        int result = pst.executeUpdate();
+
+        if (result > 0) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Student deleted successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            loadStudents();
+            clearFields();
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Student could not be deleted.",
+                    "Delete Failed",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+
+    } catch (SQLException ex) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Error deleting student:\n\n" + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+}
+    private void clearFields() {
+
+    jTextField1.setText("");
+    jTextField2.setText("");
+    jTextField3.setText("");
+
+    if (jComboBox1.getItemCount() > 0) {
+        jComboBox1.setSelectedIndex(0);
+    }
+
+    if (jComboBox2.getItemCount() > 0) {
+        jComboBox2.setSelectedIndex(0);
+    }
+
+    jTable1.clearSelection();
+}
+    private void searchStudents() {
+
+    String keyword = jTextField4.getText().trim();
+
+    if (keyword.equals("🔍 Search student...")) {
+        keyword = "";
+    }
+
+    DefaultTableModel model =
+            (DefaultTableModel) jTable1.getModel();
+
+    model.setRowCount(0);
+
+    String sql =
+            "SELECT ID, StudentNumber, FirstName, LastName, Course, Year "
+          + "FROM students "
+          + "WHERE SrudentNur LIKE ? "
+          + "OR FirstName LIKE ? "
+          + "OR LastName LIKE ? "
+          + "OR Course LIKE ? "
+          + "OR Year LIKE ? "
+          + "ORDER BY ID";
+
+    try (
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement pst = conn.prepareStatement(sql)
+    ) {
+
+        String search = "%" + keyword + "%";
+
+        pst.setString(1, search);
+        pst.setString(2, search);
+        pst.setString(3, search);
+        pst.setString(4, search);
+        pst.setString(5, search);
+
+        ResultSet rs = pst.executeQuery();
+
+        while (rs.next()) {
+
+            model.addRow(new Object[] {
+                rs.getInt("ID"),
+                rs.getString("StudentNumber"),
+                rs.getString("FirstName"),
+                rs.getString("LastName"),
+                rs.getString("Course"),
+                rs.getString("Year")
+            });
+        }
+
+    } catch (SQLException ex) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Error searching students:\n\n" + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -122,8 +608,8 @@ public class CRUD extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel6.setText("First Name:");
         jPanel2.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 60, -1, -1));
-        jPanel2.add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 60, 210, -1));
-        jPanel2.add(jTextField3, new org.netbeans.lib.awtextra.AbsoluteConstraints(90, 90, 200, -1));
+        jPanel2.add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 60, 180, -1));
+        jPanel2.add(jTextField3, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 90, 180, -1));
 
         jLabel8.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel8.setText("Course:");
@@ -137,7 +623,7 @@ public class CRUD extends javax.swing.JFrame {
         jPanel2.add(jComboBox1, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 30, 160, -1));
 
         jComboBox2.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        jPanel2.add(jComboBox2, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 70, 150, -1));
+        jPanel2.add(jComboBox2, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 70, 160, -1));
 
         getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 90, 810, 180));
 
