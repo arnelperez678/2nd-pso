@@ -14,7 +14,7 @@ import javax.swing.JOptionPane;
  * @author CL2-PC
  */
 public class log_in extends javax.swing.JFrame {
-Connection conn;
+    Connection conn;
     PreparedStatement pst;
     ResultSet rs;
 

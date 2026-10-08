@@ -12,9 +12,19 @@ import java.sql.SQLException;
  */
 public class DBConnection {
     private static final String URL =
-            "jdbc:ucanaccess://C:/Users/ederw/OneDrive/Documents/Student_DB.accdb";
+            "jdbc:ucanaccess://C:/Users/CL2-PC/Documents/Student_DB.accdb";
 
     public static Connection getConnection() throws SQLException {
+
+        try {
+            Class.forName("net.ucanaccess.jdbc.UcanaccessDriver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException(
+                    "UCanAccess driver not found. Check your Maven dependencies.",
+                    e
+            );
+        }
+
         return DriverManager.getConnection(URL);
     }
 }

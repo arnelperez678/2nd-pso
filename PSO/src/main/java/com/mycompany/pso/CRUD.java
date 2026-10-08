@@ -16,16 +16,16 @@ import javax.swing.table.DefaultTableModel;
  * @author Admin
  */
 public class CRUD extends javax.swing.JFrame {
-
+    
     /**
      * Creates new form CRUD
      */
     public CRUD() {
         initComponents();
-         setupComboBoxes();
-    setupTable();
-    setupEvents();
-    loadStudents();
+        setupComboBoxes();
+        setupTable();
+        setupEvents();
+        loadStudents();
     }
     
     private void setupComboBoxes() {
