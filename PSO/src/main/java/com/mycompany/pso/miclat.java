@@ -10,7 +10,7 @@ import java.util.Scanner;
  *
  * @author CL2-PC
  */
-public class perez {
+public class miclat {
      public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
        
